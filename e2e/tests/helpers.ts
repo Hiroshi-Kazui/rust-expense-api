@@ -129,6 +129,51 @@ export async function createExpenseViaApi(
   return { id: body.id as string, purpose: body.purpose as string };
 }
 
+// 1×1 transparent PNG for use as a dummy receipt file
+const DUMMY_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==';
+
+/**
+ * Create an expense with a dummy PNG receipt via the API.
+ * Returns the expense id, purpose, and receipt_file filename.
+ */
+export async function createExpenseWithReceiptViaApi(
+  apiContext: APIRequestContext,
+  token: string,
+  params: {
+    categoryId: string;
+    amount: number;
+    purpose: string;
+    occurredAt: string;
+  }
+): Promise<{ id: string; purpose: string; receiptFile: string }> {
+  const response = await apiContext.post(`${BACKEND_URL}/expenses`, {
+    headers: { Authorization: `Bearer ${token}` },
+    multipart: {
+      category_id: params.categoryId,
+      amount: params.amount.toString(),
+      purpose: params.purpose,
+      occurred_at: params.occurredAt,
+      receipt: {
+        name: 'receipt.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(DUMMY_PNG_BASE64, 'base64'),
+      },
+    },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `Create expense with receipt failed: ${response.status()} ${response.statusText()}`
+    );
+  }
+  const body = await response.json();
+  return {
+    id: body.id as string,
+    purpose: body.purpose as string,
+    receiptFile: body.receipt_file as string,
+  };
+}
+
 /**
  * Delete an expense via the API.
  */
