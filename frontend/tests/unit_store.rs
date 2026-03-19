@@ -4,6 +4,7 @@
 
 use wasm_bindgen_test::wasm_bindgen_test;
 use gloo_storage::{LocalStorage, Storage};
+use leptos::prelude::Get;
 use frontend::{
     store::{AuthStore, TOKEN_KEY, USER_KEY},
     types::{User, UserRole},
