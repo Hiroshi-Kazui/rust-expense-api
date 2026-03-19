@@ -2,14 +2,16 @@
 
 ![CI](https://github.com/Hiroshi-Kazui/rust-expense-api/actions/workflows/ci.yml/badge.svg)
 
-中小企業向け **経費申請・承認管理 REST API**。
+中小企業向け **経費申請・承認管理システム**。
 
 PHPエンジニアとして20年超の実務経験を持つ筆者が、Rustの学習目的で実装したプロジェクトです。
-actix-web を中心に、型システムと所有権モデルを活かした実務的なAPIサーバー構成を目指しました。
+バックエンド（actix-web）からフロントエンド（Leptos/WASM）まで、**フルRustスタック**で構成しています。
 
 ---
 
 ## 技術スタック
+
+### バックエンド
 
 | 技術 | 選定理由 |
 |---|---|
@@ -18,7 +20,22 @@ actix-web を中心に、型システムと所有権モデルを活かした実�
 | **Diesel** | コンパイル時SQLチェックが可能な型安全ORMで、PHPのEloquent的な安心感 |
 | **PostgreSQL** | 本番実績豊富なRDBMS。ENUM型・UUID対応 |
 | **JWT** | ステートレス認証で水平スケールに対応 |
-| **Docker Compose** | ローカル環境を問わず `docker compose up` 一発で動作 |
+
+### フロントエンド
+
+| 技術 | 選定理由 |
+|---|---|
+| **Leptos** | RustでWebUIが書ける宣言的リアクティブフレームワーク |
+| **WebAssembly (WASM)** | RustコードをブラウザでそのままCSRとして実行 |
+| **Tailwind CSS** | ユーティリティファーストでデザインを素早く構築 |
+| **trunk** | WASMアプリのビルド・バンドルツール |
+
+### インフラ
+
+| 技術 | 選定理由 |
+|---|---|
+| **Docker Compose** | `docker compose up` 一発でフロント・バック・DBが全起動 |
+| **nginx** | フロントエンド静的ファイルの配信・SPAルーティング対応 |
 
 ---
 
@@ -26,7 +43,7 @@ actix-web を中心に、型システムと所有権モデルを活かした実�
 
 ### 前提条件
 
-- Docker / Docker Compose が使えること（ローカルにRustは不要）
+- Docker / Docker Compose が使えること（ローカルにRust・Node.jsは不要）
 
 ### 1. リポジトリをクローン
 
@@ -41,15 +58,46 @@ cd rust-expense-api
 docker compose up --build
 ```
 
-初回ビルドは数分かかります（空の `main.rs` で依存クレートを先にビルドしてキャッシュするため、2回目以降は高速）。
+初回ビルドは10〜20分かかります（WASM + バックエンドのRustビルドを含むため）。
+2回目以降はDockerレイヤーキャッシュで高速化されます。
 
 起動後、以下が自動で行われます：
 
 1. PostgreSQL が起動・ヘルスチェック通過
 2. Diesel マイグレーション実行（テーブル作成）
-3. 初期 admin ユーザーを自動シード（初回のみ）
+3. 初期 admin ユーザーと勘定項目を自動シード（初回のみ）
 
-### 3. 動作確認
+### 3. アクセス
+
+| サービス | URL |
+|---|---|
+| **フロントエンド（UI）** | http://localhost:3000 |
+| **バックエンド（API）** | http://localhost:8080 |
+
+ログイン情報（初期値）：
+
+| 項目 | 値 |
+|---|---|
+| メールアドレス | `admin@example.com` |
+| パスワード | `changeme` |
+
+### 4. フロントエンドのローカル開発（trunk）
+
+Dockerを使わずにフロントエンドのみ開発する場合：
+
+```bash
+# 前提: Rust + wasm32ターゲット + trunk + Node.js が必要
+rustup target add wasm32-unknown-unknown
+cargo install trunk
+
+cd frontend
+npm install          # Tailwind CSS のインストール
+trunk serve          # http://localhost:8888 でホットリロード起動
+```
+
+バックエンドは別途 `docker compose up db app` で起動しておく必要があります。
+
+### 5. API 動作確認
 
 ```bash
 curl http://localhost:8080/auth/login \
@@ -273,6 +321,77 @@ expenses
 
 ---
 
+## フロントエンド画面一覧
+
+### 画面構成
+
+| パス | 画面名 | 権限 |
+|---|---|---|
+| `/login` | ログイン | 全員（未認証） |
+| `/expenses` | 経費申請一覧 | 全ユーザー |
+| `/expenses/new` | 経費申請 新規作成 | 全ユーザー |
+| `/expenses/:id/edit` | 経費申請 編集 | 本人のみ（Pending のみ編集可） |
+| `/admin/expenses` | 全申請一覧（管理者） | Admin のみ |
+| `/admin/users` | ユーザー管理 | Admin のみ |
+| `/admin/categories` | 勘定項目管理 | Admin のみ |
+
+### 各画面の機能
+
+#### ログイン（`/login`）
+
+- メールアドレス・パスワードによる認証
+- 認証成功後 `/expenses` へリダイレクト
+- 未入力・認証失敗時のエラーメッセージ表示
+- JWT トークンを `localStorage` に保存
+
+#### 経費申請一覧（`/expenses`）
+
+- 自分が作成した申請をテーブル表示（目的・金額・発生日・ステータス）
+- ステータスバッジ表示（申請中 / 承認済 / 差し戻し）
+- Pending 申請のみ「編集」リンクを表示
+- 「新規申請」ボタンで作成画面へ遷移
+
+#### 経費申請 新規作成（`/expenses/new`）
+
+- 勘定項目（セレクト）・金額・目的・発生日・備考を入力
+- レシート・領収書をファイル添付（JPEG / PNG / PDF、最大 10 MB）
+- 必須項目未入力・金額不正時のバリデーションエラー表示
+- 申請成功後 `/expenses` へリダイレクト
+
+#### 経費申請 編集（`/expenses/:id/edit`）
+
+- 既存データをフォームに初期表示
+- 勘定項目・金額・目的・発生日・備考を変更して更新
+- 削除ボタンは **2回クリック確認方式**（1回目で「本当に削除」に変わる）
+- Pending 以外の申請は編集・削除不可
+
+#### 全申請一覧 — 管理者（`/admin/expenses`）
+
+- 全ユーザーの申請を一覧表示
+- Pending 申請に「承認」「差し戻し」ボタンを表示
+- 承認済・差し戻し済の申請は「戻す」ボタンで Pending に戻す
+- Pending 申請にチェックボックスを表示し、複数選択して**一括承認**が可能
+- ステータス変更はページリロードなしに即時反映
+
+#### ユーザー管理（`/admin/users`）
+
+- 登録済みユーザー一覧をテーブル表示
+- 名前・メールアドレス・パスワード・ロール（User / Admin）を入力してユーザー登録
+
+#### 勘定項目管理（`/admin/categories`）
+
+- 勘定項目の一覧表示
+- 名前を入力して勘定項目を追加
+
+### 共通レイアウト
+
+- 左サイドバーにナビゲーションリンクとログインユーザー名を表示
+- Admin ユーザーのみ管理メニュー（全申請一覧・ユーザー・勘定項目）を表示
+- 未認証状態で保護ページにアクセスすると `/login` へリダイレクト
+- Admin 以外が管理ページにアクセスすると `/expenses` へリダイレクト
+
+---
+
 ## プロジェクト構成
 
 ```
@@ -289,11 +408,38 @@ rust-expense-api/
 │   ├── errors.rs           # 統一エラー型
 │   ├── schema.rs           # Diesel スキーマ定義
 │   ├── upload.rs           # ファイルアップロード処理
+│   ├── seeder.rs           # 起動時の初期データ投入
 │   ├── auth/
 │   │   ├── jwt.rs          # JWT生成・検証
 │   │   └── middleware.rs   # actix-web 認証ガード
 │   ├── models/             # DB モデル・リクエスト型
 │   └── handlers/           # ルートハンドラ
+├── frontend/
+│   ├── Cargo.toml
+│   ├── src/
+│   │   ├── main.rs         # WASMエントリポイント
+│   │   ├── router.rs       # SPA ルーティング・認証ガード
+│   │   ├── api.rs          # バックエンドAPIクライアント
+│   │   ├── store.rs        # 認証ストア（localStorage連携）
+│   │   ├── types.rs        # 共有型定義
+│   │   ├── error.rs        # フロントエンドエラー型
+│   │   ├── components/
+│   │   │   ├── layout.rs   # サイドバー付きレイアウト
+│   │   │   └── toast.rs    # トースト通知
+│   │   └── pages/
+│   │       ├── login.rs
+│   │       ├── users.rs
+│   │       ├── categories.rs
+│   │       ├── admin_expenses.rs
+│   │       └── expenses/
+│   │           ├── list.rs
+│   │           ├── create.rs
+│   │           └── edit.rs
+│   ├── Dockerfile
+│   └── nginx.conf          # SPA ルーティング対応
+├── e2e/                    # Playwright E2E テスト
+│   ├── playwright.config.ts
+│   └── tests/
 └── .github/workflows/ci.yml
 ```
 
