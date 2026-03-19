@@ -1,27 +1,15 @@
+use rust_expense_api::{errors, handlers, seeder, MIGRATIONS};
 use actix_web::{middleware::Logger, web, App, HttpServer};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-
-mod auth;
-mod config;
-mod db;
-mod errors;
-mod handlers;
-mod models;
-mod schema;
-mod seeder;
-mod upload;
-
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+use diesel_migrations::MigrationHarness;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().ok();
     env_logger::init();
 
-    let cfg = config::Config::from_env();
-    let pool = db::create_pool(&cfg.database_url);
+    let cfg = rust_expense_api::config::Config::from_env();
+    let pool = rust_expense_api::db::create_pool(&cfg.database_url);
 
-    // Run migrations
     {
         let mut conn = pool.get().expect("Failed to get DB connection for migrations");
         conn.run_pending_migrations(MIGRATIONS)
@@ -29,7 +17,6 @@ async fn main() -> std::io::Result<()> {
         log::info!("Database migrations applied");
     }
 
-    // Run seeders
     {
         let mut conn = pool.get().expect("Failed to get DB connection for seeding");
         if let Err(e) = seeder::run(&mut conn) {
@@ -58,15 +45,11 @@ async fn main() -> std::io::Result<()> {
                         .into()
                     }),
             )
-            // Auth
             .service(handlers::auth::login)
-            // Users (admin)
             .service(handlers::users::create_user)
             .service(handlers::users::list_users)
-            // Categories (admin)
             .service(handlers::categories::create_category)
             .service(handlers::categories::list_categories)
-            // Expenses — bulk-approve must come before /{id} routes
             .service(handlers::expenses::bulk_approve)
             .service(handlers::expenses::create_expense)
             .service(handlers::expenses::list_expenses)
