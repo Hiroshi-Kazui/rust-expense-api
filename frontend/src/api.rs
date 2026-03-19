@@ -5,6 +5,10 @@ use crate::types::ErrorResponse;
 
 const API_BASE: &str = "http://localhost:8080";
 
+pub fn upload_url(filename: &str) -> String {
+    format!("{}/uploads/{}", API_BASE, filename)
+}
+
 async fn get_token() -> Option<String> {
     use gloo_storage::{LocalStorage, Storage};
     LocalStorage::get::<String>(crate::store::TOKEN_KEY).ok()

@@ -103,6 +103,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                                 <th class="table-header">"金額"</th>
                                 <th class="table-header">"発生日"</th>
                                 <th class="table-header">"ステータス"</th>
+                                <th class="table-header">"添付"</th>
                                 <th class="table-header">"操作"</th>
                             </tr>
                         </thead>
@@ -144,6 +145,23 @@ pub fn AdminExpensesPage() -> impl IntoView {
                                             <td class="table-cell text-gray-500">{occurred}</td>
                                             <td class="table-cell">
                                                 <span class={status_badge}>{status_label}</span>
+                                            </td>
+                                            <td class="table-cell">
+                                                {match expense.receipt_file.clone() {
+                                                    Some(f) => {
+                                                        let view_url = crate::api::upload_url(&f);
+                                                        let dl_url = crate::api::upload_url(&f);
+                                                        view! {
+                                                            <div class="flex gap-2">
+                                                                <a href={view_url} target="_blank"
+                                                                    class="text-xs text-blue-500 hover:text-blue-700">"表示"</a>
+                                                                <a href={dl_url} download={f}
+                                                                    class="text-xs text-green-600 hover:text-green-800">"DL"</a>
+                                                            </div>
+                                                        }.into_any()
+                                                    }
+                                                    None => view! { <span class="text-xs text-gray-300">"-"</span> }.into_any()
+                                                }}
                                             </td>
                                             <td class="table-cell">
                                                 <div class="flex gap-1">
