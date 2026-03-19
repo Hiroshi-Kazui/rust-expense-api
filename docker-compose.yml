@@ -23,6 +23,7 @@ services:
       JWT_EXPIRES_IN_HOURS: "24"
       UPLOAD_DIR: /app/uploads
       RUST_LOG: info
+      SEED_DEMO: ${SEED_DEMO:-false}
     ports:
       - "8080:8080"
     volumes:
