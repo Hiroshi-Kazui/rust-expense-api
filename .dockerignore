@@ -1,0 +1,7 @@
+target/
+.git/
+uploads/
+.env
+.env.*
+*.md
+.github/
