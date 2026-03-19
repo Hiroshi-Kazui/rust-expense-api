@@ -92,23 +92,20 @@ pub fn AdminExpensesPage() -> impl IntoView {
                 </div>
 
                 <div class="flex gap-2 mb-4">
-                    {["all", "Pending", "Approved", "Rejected"].into_iter().map(|f| {
-                        let label = match f {
-                            "all" => "すべて",
-                            "Pending" => "申請中",
-                            "Approved" => "承認済",
-                            "Rejected" => "却下",
-                            _ => f,
-                        };
+                    {[
+                        ("all",      "すべて", "bg-gray-700 text-white",    "bg-gray-100 text-gray-600 hover:bg-gray-200"),
+                        ("Pending",  "申請中", "bg-yellow-500 text-white",  "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"),
+                        ("Approved", "承認済", "bg-green-600 text-white",   "bg-green-100 text-green-800 hover:bg-green-200"),
+                        ("Rejected", "却下",   "bg-red-500 text-white",     "bg-red-100 text-red-800 hover:bg-red-200"),
+                    ].into_iter().map(|(f, label, active_cls, inactive_cls)| {
                         let f_str = f.to_string();
                         let f_str2 = f_str.clone();
                         view! {
                             <button
-                                class=move || if status_filter.get() == f_str {
-                                    "px-3 py-1 text-sm rounded font-medium bg-indigo-600 text-white"
-                                } else {
-                                    "px-3 py-1 text-sm rounded font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                }
+                                class=move || format!(
+                                    "px-3 py-1 text-sm rounded font-medium {}",
+                                    if status_filter.get() == f_str { active_cls } else { inactive_cls }
+                                )
                                 on:click=move |_| status_filter.set(f_str2.clone())
                             >
                                 {label}
