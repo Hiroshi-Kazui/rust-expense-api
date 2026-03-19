@@ -63,6 +63,21 @@ pub struct Expense {
     pub created_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ExpenseWithUser {
+    pub id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub category_id: String,
+    pub amount: i32,
+    pub purpose: String,
+    pub occurred_at: String,
+    pub note: Option<String>,
+    pub receipt_file: Option<String>,
+    pub status: ExpenseStatus,
+    pub created_at: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginResponse {
     pub token: String,

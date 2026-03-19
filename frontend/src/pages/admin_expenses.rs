@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use serde::Serialize;
 use crate::api;
 use crate::components::layout::Layout;
-use crate::types::{BulkApproveResponse, Expense, ExpenseStatus};
+use crate::types::{BulkApproveResponse, ExpenseStatus, ExpenseWithUser};
 
 #[derive(Serialize)]
 struct UpdateStatusRequest {
@@ -16,14 +16,14 @@ struct BulkApproveRequest {
 
 #[component]
 pub fn AdminExpensesPage() -> impl IntoView {
-    let expenses = RwSignal::new(Vec::<Expense>::new());
+    let expenses = RwSignal::new(Vec::<ExpenseWithUser>::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
     let error_msg = RwSignal::new(Option::<String>::None);
     let success_msg = RwSignal::new(Option::<String>::None);
 
     let fetch = move || {
         wasm_bindgen_futures::spawn_local(async move {
-            match api::get::<Vec<Expense>>("/expenses").await {
+            match api::get::<Vec<ExpenseWithUser>>("/admin/expenses").await {
                 Ok(data) => expenses.set(data),
                 Err(e) => error_msg.set(Some(e.to_string())),
             }
@@ -34,14 +34,13 @@ pub fn AdminExpensesPage() -> impl IntoView {
     let update_status = move |id: String, status: &'static str| {
         wasm_bindgen_futures::spawn_local(async move {
             let req = UpdateStatusRequest { status: status.to_string() };
-            match api::patch::<_, Expense>(&format!("/expenses/{}/status", id), &req).await {
-                Ok(updated) => {
-                    expenses.update(|list| {
-                        if let Some(e) = list.iter_mut().find(|e| e.id == updated.id) {
-                            *e = updated;
-                        }
-                    });
+            match api::patch::<_, serde_json::Value>(&format!("/expenses/{}/status", id), &req).await {
+                Ok(_) => {
                     success_msg.set(Some("ステータスを更新しました".to_string()));
+                    match api::get::<Vec<ExpenseWithUser>>("/admin/expenses").await {
+                        Ok(data) => expenses.set(data),
+                        Err(_) => {}
+                    }
                 }
                 Err(e) => error_msg.set(Some(e.to_string())),
             }
@@ -61,7 +60,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                     selected_ids.set(Vec::new());
                     success_msg.set(Some(format!("{}件を一括承認しました", resp.approved)));
                     // Refresh list
-                    match api::get::<Vec<Expense>>("/expenses").await {
+                    match api::get::<Vec<ExpenseWithUser>>("/admin/expenses").await {
                         Ok(data) => expenses.set(data),
                         Err(_) => {}
                     }
@@ -99,6 +98,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                         <thead>
                             <tr class="border-b border-gray-200">
                                 <th class="table-header w-8"></th>
+                                <th class="table-header">"申請者"</th>
                                 <th class="table-header">"目的"</th>
                                 <th class="table-header">"金額"</th>
                                 <th class="table-header">"発生日"</th>
@@ -140,6 +140,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                                                     view! { <span></span> }.into_any()
                                                 }}
                                             </td>
+                                            <td class="table-cell text-gray-600">{expense.user_name.clone()}</td>
                                             <td class="table-cell font-medium">{expense.purpose.clone()}</td>
                                             <td class="table-cell">{format!("¥{}", expense.amount)}</td>
                                             <td class="table-cell text-gray-500">{occurred}</td>

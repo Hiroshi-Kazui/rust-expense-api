@@ -6,7 +6,6 @@ use leptos_router::{
 use crate::components::toast::{ToastContainer, use_toast};
 use crate::pages::{
     admin_expenses::AdminExpensesPage,
-    categories::CategoriesPage,
     expenses::{create::ExpenseCreatePage, edit::ExpenseEditPage, list::ExpenseListPage},
     login::LoginPage,
     users::UsersPage,
@@ -64,9 +63,6 @@ pub fn App() -> impl IntoView {
                 } />
                 <Route path=path!("/admin/users") view=move || view! {
                     <AuthGuard><AdminGuard><UsersPage /></AdminGuard></AuthGuard>
-                } />
-                <Route path=path!("/admin/categories") view=move || view! {
-                    <AuthGuard><AdminGuard><CategoriesPage /></AdminGuard></AuthGuard>
                 } />
                 <Route path=path!("/") view=move || {
                     let auth = use_context::<AuthStore>().expect("AuthStore");

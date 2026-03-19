@@ -3,7 +3,7 @@ use leptos_router::hooks::use_navigate;
 use serde::Serialize;
 use crate::api;
 use crate::store::AuthStore;
-use crate::types::LoginResponse;
+use crate::types::{LoginResponse, UserRole};
 
 #[derive(Serialize)]
 struct LoginRequest {
@@ -37,8 +37,10 @@ pub fn LoginPage() -> impl IntoView {
             let req = LoginRequest { email: email_val, password: password_val };
             match api::post_no_auth::<_, LoginResponse>("/auth/login", &req).await {
                 Ok(resp) => {
+                    let is_admin = resp.user.role == UserRole::Admin;
                     auth.login(resp.token, resp.user);
-                    navigate("/expenses", Default::default());
+                    let dest = if is_admin { "/admin/expenses" } else { "/expenses" };
+                    navigate(dest, Default::default());
                 }
                 Err(e) => {
                     error_msg.set(Some(e.to_string()));

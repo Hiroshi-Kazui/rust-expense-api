@@ -19,23 +19,25 @@ pub fn Layout(children: Children) -> impl IntoView {
                     <p class="text-xs text-gray-500 mt-0.5">{user_name}</p>
                 </div>
                 <nav class="flex-1 px-2 py-3 space-y-1">
-                    <A href="/expenses" attr:class="nav-link">
-                        "📋 経費申請"
-                    </A>
-                    <A href="/expenses/new" attr:class="nav-link">
-                        "＋ 新規申請"
-                    </A>
                     {move || if is_admin() {
                         view! {
-                            <div class="pt-3">
+                            <div>
                                 <p class="px-2 text-xs text-gray-400 font-medium mb-1">"管理"</p>
                                 <A href="/admin/expenses" attr:class="nav-link">"📊 全申請一覧"</A>
                                 <A href="/admin/users" attr:class="nav-link">"👥 ユーザー"</A>
-                                <A href="/admin/categories" attr:class="nav-link">"🏷 勘定項目"</A>
                             </div>
                         }.into_any()
                     } else {
-                        view! { <span></span> }.into_any()
+                        view! {
+                            <div>
+                                <A href="/expenses" attr:class="nav-link">
+                                    "📋 経費申請"
+                                </A>
+                                <A href="/expenses/new" attr:class="nav-link">
+                                    "＋ 新規申請"
+                                </A>
+                            </div>
+                        }.into_any()
                     }}
                 </nav>
                 <div class="px-3 py-3 border-t border-gray-200">
