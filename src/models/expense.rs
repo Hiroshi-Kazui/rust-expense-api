@@ -31,6 +31,22 @@ pub struct Expense {
     pub created_at: NaiveDateTime,
 }
 
+/// Expense with the applicant's name, returned by the admin list endpoint.
+#[derive(Debug, Serialize)]
+pub struct ExpenseWithUser {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub user_name: String,
+    pub category_id: Uuid,
+    pub amount: i32,
+    pub purpose: String,
+    pub occurred_at: NaiveDate,
+    pub note: Option<String>,
+    pub receipt_file: Option<String>,
+    pub status: ExpenseStatus,
+    pub created_at: NaiveDateTime,
+}
+
 #[derive(Debug, Insertable)]
 #[diesel(table_name = expenses)]
 pub struct NewExpense {

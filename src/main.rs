@@ -59,6 +59,7 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::categories::create_category)
             .service(handlers::categories::list_categories)
             .service(handlers::expenses::bulk_approve)
+            .service(handlers::expenses::list_admin_expenses)
             .service(handlers::expenses::create_expense)
             .service(handlers::expenses::list_expenses)
             .service(handlers::expenses::get_expense)

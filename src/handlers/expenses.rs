@@ -8,11 +8,11 @@ use crate::config::Config;
 use crate::db::Pool;
 use crate::errors::AppError;
 use crate::models::expense::{
-    BulkApproveRequest, Expense, ExpenseStatus, NewExpense, UpdateExpense, UpdateExpenseRequest,
-    UpdateExpenseStatus, UpdateStatusRequest,
+    BulkApproveRequest, Expense, ExpenseStatus, ExpenseWithUser, NewExpense, UpdateExpense,
+    UpdateExpenseRequest, UpdateExpenseStatus, UpdateStatusRequest,
 };
-use crate::models::user::UserRole;
-use crate::schema::expenses;
+use crate::models::user::{User, UserRole};
+use crate::schema::{expenses, users};
 
 // ─── POST /expenses ───────────────────────────────────────────────────────────
 
@@ -80,6 +80,43 @@ pub async fn create_expense(
         })?;
 
     Ok(HttpResponse::Created().json(expense))
+}
+
+// ─── GET /admin/expenses  (admin) ─────────────────────────────────────────────
+// Returns all expenses joined with the applicant's name.
+
+#[get("/admin/expenses")]
+pub async fn list_admin_expenses(
+    pool: web::Data<Pool>,
+    _admin: AdminUser,
+) -> Result<HttpResponse, AppError> {
+    let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let rows: Vec<(Expense, User)> = expenses::table
+        .inner_join(users::table)
+        .select((Expense::as_select(), User::as_select()))
+        .order(expenses::created_at.desc())
+        .load(&mut conn)
+        .map_err(AppError::from)?;
+
+    let list: Vec<ExpenseWithUser> = rows
+        .into_iter()
+        .map(|(e, u)| ExpenseWithUser {
+            id: e.id,
+            user_id: e.user_id,
+            user_name: u.name,
+            category_id: e.category_id,
+            amount: e.amount,
+            purpose: e.purpose,
+            occurred_at: e.occurred_at,
+            note: e.note,
+            receipt_file: e.receipt_file,
+            status: e.status,
+            created_at: e.created_at,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(list))
 }
 
 // ─── GET /expenses ────────────────────────────────────────────────────────────
