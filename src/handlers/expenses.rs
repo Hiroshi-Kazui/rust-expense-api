@@ -277,7 +277,10 @@ pub async fn serve_upload(
 
     Ok(HttpResponse::Ok()
         .content_type(content_type)
-        .append_header(("Content-Disposition", "inline"))
+        .append_header((
+            "Content-Disposition",
+            format!("attachment; filename=\"{}\"", filename),
+        ))
         .body(data))
 }
 
