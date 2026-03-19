@@ -212,6 +212,79 @@ pub async fn delete_expense(
     Ok(HttpResponse::NoContent().finish())
 }
 
+// ─── GET /uploads/{filename} ─────────────────────────────────────────────────
+
+#[get("/uploads/{filename}")]
+pub async fn serve_upload(
+    config: web::Data<Config>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, AppError> {
+    let filename = path.into_inner();
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Err(AppError::BadRequest("Invalid filename".into()));
+    }
+    let file_path = std::path::PathBuf::from(&config.upload_dir).join(&filename);
+    let data = tokio::fs::read(&file_path)
+        .await
+        .map_err(|_| AppError::NotFound("File not found".into()))?;
+
+    let content_type = if filename.ends_with(".jpg") || filename.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if filename.ends_with(".png") {
+        "image/png"
+    } else if filename.ends_with(".pdf") {
+        "application/pdf"
+    } else {
+        "application/octet-stream"
+    };
+
+    Ok(HttpResponse::Ok()
+        .content_type(content_type)
+        .append_header(("Content-Disposition", "inline"))
+        .body(data))
+}
+
+// ─── DELETE /expenses/{id}/receipt ───────────────────────────────────────────
+
+#[delete("/expenses/{id}/receipt")]
+pub async fn delete_expense_receipt(
+    pool: web::Data<Pool>,
+    config: web::Data<Config>,
+    auth: AuthenticatedUser,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let expense_id = path.into_inner();
+    let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let expense: Expense = expenses::table
+        .find(expense_id)
+        .select(Expense::as_select())
+        .first(&mut conn)
+        .map_err(AppError::from)?;
+
+    if expense.user_id != auth.0.sub {
+        return Err(AppError::Forbidden("Not your expense".into()));
+    }
+    if expense.status != ExpenseStatus::Pending {
+        return Err(AppError::BadRequest(
+            "Only pending expenses can be modified".into(),
+        ));
+    }
+
+    // Clear receipt_file in DB first, then delete the physical file
+    diesel::update(expenses::table.find(expense_id))
+        .set(expenses::receipt_file.eq(None::<String>))
+        .execute(&mut conn)
+        .map_err(AppError::from)?;
+
+    if let Some(ref filename) = expense.receipt_file {
+        let file_path = std::path::PathBuf::from(&config.upload_dir).join(filename);
+        tokio::fs::remove_file(&file_path).await.ok();
+    }
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
 // ─── PATCH /expenses/{id}/status  (admin) ────────────────────────────────────
 
 #[patch("/expenses/{id}/status")]

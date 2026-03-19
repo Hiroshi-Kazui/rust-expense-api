@@ -65,6 +65,8 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::expenses::update_expense)
             .service(handlers::expenses::delete_expense)
             .service(handlers::expenses::update_expense_status)
+            .service(handlers::expenses::serve_upload)
+            .service(handlers::expenses::delete_expense_receipt)
     })
     .bind("0.0.0.0:8080")?
     .run()
