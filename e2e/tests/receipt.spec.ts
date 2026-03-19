@@ -1,8 +1,8 @@
 /**
  * E2E Tests — Section 3.4: Receipt attachment flow
  *
- * TC-E2E-RECEIPT-01  Expense list shows 表示/DL links for receipt-attached expense
- * TC-E2E-RECEIPT-02  Edit page shows receipt section with 表示/ダウンロード/添付削除
+ * TC-E2E-RECEIPT-01  Expense list shows DL link for receipt-attached expense
+ * TC-E2E-RECEIPT-02  Edit page shows receipt section with ダウンロード/添付削除
  * TC-E2E-RECEIPT-03  Clicking 添付削除 removes the receipt section from edit page
  */
 
@@ -22,7 +22,7 @@ import {
 
 test.describe('TC-E2E-RECEIPT: Receipt attachment flow', () => {
   // -------------------------------------------------------------------------
-  // TC-E2E-RECEIPT-01: List page shows 表示/DL links
+  // TC-E2E-RECEIPT-01: List page shows DL link
   // -------------------------------------------------------------------------
   test('TC-E2E-RECEIPT-01: e2e_receipt_links_visible_in_list', async ({ page }) => {
     const apiContext = await createApiContext();
@@ -43,14 +43,9 @@ test.describe('TC-E2E-RECEIPT: Receipt attachment flow', () => {
 
       const row = page.getByText(`レシートテスト1-${runId}`).locator('..');
 
-      // 表示リンクが存在する
-      const viewLink = row.getByRole('link', { name: /表示/ });
-      await expect(viewLink).toBeVisible({ timeout: 8_000 });
-      await expect(viewLink).toHaveAttribute('target', '_blank');
-
       // DLリンクが存在して download 属性を持つ
       const dlLink = row.getByRole('link', { name: /DL/ });
-      await expect(dlLink).toBeVisible();
+      await expect(dlLink).toBeVisible({ timeout: 8_000 });
       await expect(dlLink).toHaveAttribute('download');
     } finally {
       try { await deleteExpenseViaApi(apiContext, token, expense.id); } catch { /* ignore */ }
@@ -82,14 +77,14 @@ test.describe('TC-E2E-RECEIPT: Receipt attachment flow', () => {
       // 添付ファイルセクションが表示される
       await expect(page.getByText('添付ファイル')).toBeVisible({ timeout: 8_000 });
 
-      // 表示・ダウンロード・添付削除ボタンが存在する
-      await expect(page.getByRole('link', { name: /表示/ })).toBeVisible();
-      await expect(page.getByRole('link', { name: /ダウンロード/ })).toBeVisible();
+      // ダウンロード・添付削除ボタンが存在する
+      const dlLink = page.getByRole('link', { name: /ダウンロード/ });
+      await expect(dlLink).toBeVisible();
       await expect(page.getByRole('button', { name: /添付削除/ })).toBeVisible();
 
-      // 表示リンクが /uploads/ を指している
-      const viewHref = await page.getByRole('link', { name: /表示/ }).getAttribute('href');
-      expect(viewHref).toMatch(/\/uploads\//);
+      // ダウンロードリンクが /uploads/ を指している
+      const dlHref = await dlLink.getAttribute('href');
+      expect(dlHref).toMatch(/\/uploads\//);
     } finally {
       try { await deleteExpenseViaApi(apiContext, token, expense.id); } catch { /* ignore */ }
       await apiContext.dispose();

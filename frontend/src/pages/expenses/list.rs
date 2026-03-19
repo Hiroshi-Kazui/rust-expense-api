@@ -68,12 +68,9 @@ pub fn ExpenseListPage() -> impl IntoView {
                                             <td class="table-cell">
                                                 {match expense.receipt_file.clone() {
                                                     Some(f) => {
-                                                        let view_url = crate::api::upload_url(&f);
                                                         let dl_url = crate::api::upload_url(&f);
                                                         view! {
                                                             <div class="flex gap-2">
-                                                                <a href={view_url} target="_blank"
-                                                                    class="text-xs text-blue-500 hover:text-blue-700">"表示"</a>
                                                                 <a href={dl_url} download={f}
                                                                     class="text-xs text-green-600 hover:text-green-800">"DL"</a>
                                                             </div>

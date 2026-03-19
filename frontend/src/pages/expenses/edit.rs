@@ -171,7 +171,6 @@ pub fn ExpenseEditPage() -> impl IntoView {
                                     prop:value=note />
                             </div>
                             {move || receipt_file.get().map(|f| {
-                                let view_url = crate::api::upload_url(&f);
                                 let dl_url = crate::api::upload_url(&f);
                                 let is_pending = expense.get()
                                     .map(|e| matches!(e.status, crate::types::ExpenseStatus::Pending))
@@ -181,8 +180,6 @@ pub fn ExpenseEditPage() -> impl IntoView {
                                         <p class="text-xs text-gray-500 mb-2">"添付ファイル"</p>
                                         <div class="flex items-center gap-3">
                                             <span class="text-sm text-gray-700 truncate max-w-xs">{f.clone()}</span>
-                                            <a href={view_url} target="_blank"
-                                                class="text-xs text-blue-500 hover:text-blue-700 shrink-0">"表示"</a>
                                             <a href={dl_url} download={f}
                                                 class="text-xs text-green-600 hover:text-green-800 shrink-0">"ダウンロード"</a>
                                             {if is_pending {

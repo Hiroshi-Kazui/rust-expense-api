@@ -20,6 +20,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
     let selected_ids = RwSignal::new(Vec::<String>::new());
     let error_msg = RwSignal::new(Option::<String>::None);
     let success_msg = RwSignal::new(Option::<String>::None);
+    let status_filter = RwSignal::new("all".to_string());
 
     let fetch = move || {
         wasm_bindgen_futures::spawn_local(async move {
@@ -90,6 +91,32 @@ pub fn AdminExpensesPage() -> impl IntoView {
                     </button>
                 </div>
 
+                <div class="flex gap-2 mb-4">
+                    {["all", "Pending", "Approved", "Rejected"].into_iter().map(|f| {
+                        let label = match f {
+                            "all" => "すべて",
+                            "Pending" => "申請中",
+                            "Approved" => "承認済",
+                            "Rejected" => "却下",
+                            _ => f,
+                        };
+                        let f_str = f.to_string();
+                        let f_str2 = f_str.clone();
+                        view! {
+                            <button
+                                class=move || if status_filter.get() == f_str {
+                                    "px-3 py-1 text-sm rounded font-medium bg-indigo-600 text-white"
+                                } else {
+                                    "px-3 py-1 text-sm rounded font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                }
+                                on:click=move |_| status_filter.set(f_str2.clone())
+                            >
+                                {label}
+                            </button>
+                        }
+                    }).collect::<Vec<_>>()}
+                </div>
+
                 {move || error_msg.get().map(|e| view! { <p class="text-sm text-red-500 mb-3">{e}</p> })}
                 {move || success_msg.get().map(|s| view! { <p class="text-sm text-green-600 mb-3">{s}</p> })}
 
@@ -109,7 +136,12 @@ pub fn AdminExpensesPage() -> impl IntoView {
                         </thead>
                         <tbody>
                             <For
-                                each=move || expenses.get()
+                                each=move || {
+                                    let f = status_filter.get();
+                                    expenses.get().into_iter().filter(|e| {
+                                        f == "all" || format!("{:?}", e.status) == f
+                                    }).collect::<Vec<_>>()
+                                }
                                 key=|e| format!("{}-{:?}", e.id, e.status)
                                 children=move |expense| {
                                     let status_badge = match expense.status {
@@ -150,12 +182,9 @@ pub fn AdminExpensesPage() -> impl IntoView {
                                             <td class="table-cell">
                                                 {match expense.receipt_file.clone() {
                                                     Some(f) => {
-                                                        let view_url = crate::api::upload_url(&f);
                                                         let dl_url = crate::api::upload_url(&f);
                                                         view! {
                                                             <div class="flex gap-2">
-                                                                <a href={view_url} target="_blank"
-                                                                    class="text-xs text-blue-500 hover:text-blue-700">"表示"</a>
                                                                 <a href={dl_url} download={f}
                                                                     class="text-xs text-green-600 hover:text-green-800">"DL"</a>
                                                             </div>
