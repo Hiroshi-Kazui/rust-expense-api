@@ -8,6 +8,7 @@ mod errors;
 mod handlers;
 mod models;
 mod schema;
+mod seeder;
 mod upload;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -28,17 +29,11 @@ async fn main() -> std::io::Result<()> {
         log::info!("Database migrations applied");
     }
 
-    // Seed initial admin
+    // Run seeders
     {
         let mut conn = pool.get().expect("Failed to get DB connection for seeding");
-        let admin_email = std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@example.com".to_string());
-        let admin_password = std::env::var("ADMIN_PASSWORD")
-            .unwrap_or_else(|_| {
-                log::warn!("ADMIN_PASSWORD not set, using default 'changeme'. Change this immediately!");
-                "changeme".to_string()
-            });
-        if let Err(e) = handlers::users::seed_admin_if_empty(&mut conn, &admin_email, &admin_password) {
-            log::warn!("Seed failed (non-fatal): {}", e);
+        if let Err(e) = seeder::run(&mut conn) {
+            log::warn!("Seeder failed (non-fatal): {}", e);
         }
     }
 

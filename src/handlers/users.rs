@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use crate::auth::middleware::AdminUser;
 use crate::db::Pool;
 use crate::errors::AppError;
-use crate::models::user::{CreateUserRequest, NewUser, User, UserRole};
+use crate::models::user::{CreateUserRequest, NewUser, User};
 use crate::schema::users;
 
 #[post("/users")]
@@ -56,25 +56,3 @@ pub async fn list_users(
     Ok(HttpResponse::Ok().json(user_list))
 }
 
-/// Seed an initial admin user (called at startup if no users exist)
-pub fn seed_admin_if_empty(
-    conn: &mut crate::db::DbConnection,
-    admin_email: &str,
-    password: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use crate::schema::users::dsl::*;
-
-    let count: i64 = users.count().get_result(conn)?;
-    if count == 0 {
-        let hash = bcrypt::hash(password, bcrypt::DEFAULT_COST)?;
-        let new_admin = NewUser {
-            name: "Administrator".to_string(),
-            email: admin_email.to_string(),
-            password_hash: hash,
-            role: UserRole::Admin,
-        };
-        diesel::insert_into(users).values(&new_admin).execute(conn)?;
-        log::info!("Seeded initial admin user: {}", admin_email);
-    }
-    Ok(())
-}
