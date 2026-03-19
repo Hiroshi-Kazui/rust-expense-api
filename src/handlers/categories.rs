@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpResponse};
 use diesel::prelude::*;
 
-use crate::auth::middleware::AdminUser;
+use crate::auth::middleware::{AdminUser, AuthenticatedUser};
 use crate::db::Pool;
 use crate::errors::AppError;
 use crate::models::category::{Category, CreateCategoryRequest, NewCategory};
@@ -35,7 +35,7 @@ pub async fn create_category(
 #[get("/categories")]
 pub async fn list_categories(
     pool: web::Data<Pool>,
-    _admin: AdminUser,
+    _auth: AuthenticatedUser,
 ) -> Result<HttpResponse, AppError> {
     let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
 

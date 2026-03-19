@@ -61,6 +61,7 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::expenses::bulk_approve)
             .service(handlers::expenses::create_expense)
             .service(handlers::expenses::list_expenses)
+            .service(handlers::expenses::get_expense)
             .service(handlers::expenses::update_expense)
             .service(handlers::expenses::delete_expense)
             .service(handlers::expenses::update_expense_status)

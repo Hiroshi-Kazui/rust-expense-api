@@ -110,6 +110,30 @@ pub async fn list_expenses(
     Ok(HttpResponse::Ok().json(list))
 }
 
+// ─── GET /expenses/{id} ───────────────────────────────────────────────────────
+
+#[get("/expenses/{id}")]
+pub async fn get_expense(
+    pool: web::Data<Pool>,
+    auth: AuthenticatedUser,
+    path: web::Path<Uuid>,
+) -> Result<HttpResponse, AppError> {
+    let expense_id = path.into_inner();
+    let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let expense: Expense = expenses::table
+        .find(expense_id)
+        .select(Expense::as_select())
+        .first(&mut conn)
+        .map_err(AppError::from)?;
+
+    if auth.0.role != UserRole::Admin && expense.user_id != auth.0.sub {
+        return Err(AppError::Forbidden("Not your expense".into()));
+    }
+
+    Ok(HttpResponse::Ok().json(expense))
+}
+
 // ─── PATCH /expenses/{id} ─────────────────────────────────────────────────────
 
 #[patch("/expenses/{id}")]
