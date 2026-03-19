@@ -109,7 +109,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                         <tbody>
                             <For
                                 each=move || expenses.get()
-                                key=|e| e.id.clone()
+                                key=|e| format!("{}-{:?}", e.id, e.status)
                                 children=move |expense| {
                                     let status_badge = match expense.status {
                                         ExpenseStatus::Pending => "badge-pending",

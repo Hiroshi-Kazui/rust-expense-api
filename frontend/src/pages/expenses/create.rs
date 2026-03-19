@@ -109,7 +109,7 @@ pub fn ExpenseCreatePage() -> impl IntoView {
                         </div>
                         <div>
                             <label class="label">"金額（円） *"</label>
-                            <input type="number" class="input-field" min="1" placeholder="5000"
+                            <input type="number" class="input-field" placeholder="5000"
                                 on:input=move |ev| amount.set(event_target_value(&ev))
                                 prop:value=amount />
                         </div>
