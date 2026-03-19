@@ -1,5 +1,6 @@
 use rust_expense_api::{errors, handlers, seeder, MIGRATIONS};
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_cors::Cors;
+use actix_web::{http, middleware::Logger, web, App, HttpServer};
 use diesel_migrations::MigrationHarness;
 
 #[actix_web::main]
@@ -30,7 +31,14 @@ async fn main() -> std::io::Result<()> {
     log::info!("Starting server at http://0.0.0.0:8080");
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::CONTENT_TYPE])
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .wrap(Logger::default())
             .app_data(pool_data.clone())
             .app_data(cfg_data.clone())
