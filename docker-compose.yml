@@ -24,6 +24,8 @@ services:
       UPLOAD_DIR: /app/uploads
       RUST_LOG: info
       SEED_DEMO: ${SEED_DEMO:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
     ports:
       - "8080:8080"
     volumes:
@@ -31,6 +33,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
 
 volumes:
   pgdata:

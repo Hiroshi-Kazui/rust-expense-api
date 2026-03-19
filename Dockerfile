@@ -10,13 +10,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Cache dependency layer
+# Cache dependency layer (workspace-aware)
 COPY Cargo.toml Cargo.lock* ./
-RUN mkdir src && echo 'fn main() {}' > src/main.rs && \
-    cargo build --release 2>&1 | tail -5 || true && \
-    rm -rf src
+COPY frontend/Cargo.toml ./frontend/Cargo.toml
+RUN mkdir -p src frontend/src && \
+    echo 'fn main() {}' > src/main.rs && \
+    echo 'fn main() {}' > frontend/src/main.rs && \
+    cargo build --release --bin rust-expense-api 2>&1 | tail -5 || true && \
+    rm -rf src frontend/src
 
-# Build application
 COPY . .
 RUN touch src/main.rs && \
     cargo build --release --bin rust-expense-api
