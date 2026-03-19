@@ -7,7 +7,7 @@
  * TC-E2E-ADMIN-04  Individual reject → badge changes to "差し戻し"
  * TC-E2E-ADMIN-05  Bulk approve multiple → all badges change to "承認済"
  * TC-E2E-ADMIN-06  Admin creates user
- * TC-E2E-ADMIN-07  Admin creates category
+ * TC-E2E-ADMIN-07  (removed — category management screen removed from admin UI)
  * TC-E2E-ADMIN-08  Non-admin cannot access /admin/users → redirect to /expenses
  */
 
@@ -31,26 +31,31 @@ import {
 
 test.describe('TC-E2E-ADMIN: Admin flow', () => {
   // -------------------------------------------------------------------------
-  // TC-E2E-ADMIN-01: Admin sees admin menu in sidebar
+  // TC-E2E-ADMIN-01: Admin sees admin menu in sidebar (全申請一覧 + ユーザー only)
   // -------------------------------------------------------------------------
   test('TC-E2E-ADMIN-01: e2e_admin_sees_admin_menu', async ({ page }) => {
     await loginAsAdmin(page);
-    await page.waitForURL(/\/expenses/, { timeout: 10_000 });
+    await page.waitForURL(/\/admin\/expenses/, { timeout: 10_000 });
 
-    // The sidebar should contain navigation links to all three admin sections.
+    // Sidebar shows only the two admin sections
     await expect(
       page.getByRole('link', { name: /全申請一覧/ })
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: /ユーザー/ })
     ).toBeVisible();
+
+    // 新規申請 and 勘定項目 must NOT appear for admin
+    await expect(
+      page.getByRole('link', { name: /新規申請/ })
+    ).not.toBeVisible();
     await expect(
       page.getByRole('link', { name: /勘定項目/ })
-    ).toBeVisible();
+    ).not.toBeVisible();
   });
 
   // -------------------------------------------------------------------------
-  // TC-E2E-ADMIN-02: Admin sees all expenses
+  // TC-E2E-ADMIN-02: Admin sees all expenses with applicant name
   // -------------------------------------------------------------------------
   test('TC-E2E-ADMIN-02: e2e_admin_sees_all_expenses', async ({ page }) => {
     const apiContext = await createApiContext();
@@ -74,7 +79,7 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
 
     try {
       await loginAsAdmin(page);
-      await page.waitForURL(/\/expenses/, { timeout: 10_000 });
+      await page.waitForURL(/\/admin\/expenses/, { timeout: 10_000 });
 
       // Navigate to the admin all-expenses page
       await page.getByRole('link', { name: /全申請一覧/ }).click();
@@ -83,6 +88,10 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
       // Both expenses should be visible
       await expect(page.getByText('ADMIN申請 ADMIN-02')).toBeVisible();
       await expect(page.getByText('USER申請 ADMIN-02')).toBeVisible();
+
+      // Applicant names should be visible in the table
+      await expect(page.getByText('Administrator').first()).toBeVisible();
+      await expect(page.getByText('Test User').first()).toBeVisible();
     } finally {
       await deleteExpenseViaApi(apiContext, adminToken, adminExpense.id);
       await deleteExpenseViaApi(apiContext, userToken, userExpense.id);
@@ -233,7 +242,7 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
 
     try {
       await loginAsAdmin(page);
-      await page.waitForURL(/\/expenses/, { timeout: 10_000 });
+      await page.waitForURL(/\/admin\/expenses/, { timeout: 10_000 });
 
       // Navigate to /admin/users
       await page.getByRole('link', { name: /ユーザー/ }).click();
@@ -273,54 +282,8 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
   });
 
   // -------------------------------------------------------------------------
-  // TC-E2E-ADMIN-07: Admin creates category
+  // TC-E2E-ADMIN-07: (removed — category management screen no longer exists)
   // -------------------------------------------------------------------------
-  test('TC-E2E-ADMIN-07: e2e_admin_create_category', async ({ page }) => {
-    const newCategoryName = `E2Eカテゴリ-${Date.now()}`;
-
-    const apiContext = await createApiContext();
-    const adminToken = await getApiToken(apiContext, ADMIN_EMAIL, ADMIN_PASSWORD);
-    let createdCategoryId: string | undefined;
-
-    try {
-      await loginAsAdmin(page);
-      await page.waitForURL(/\/expenses/, { timeout: 10_000 });
-
-      // Navigate to /admin/categories
-      await page.getByRole('link', { name: /勘定項目/ }).click();
-      await page.waitForURL(/\/admin\/categories/, { timeout: 8_000 });
-
-      // Fill the category name input (placeholder="勘定項目名")
-      await page.getByPlaceholder('勘定項目名').fill(newCategoryName);
-
-      // Submit
-      await page.getByRole('button', { name: /追加/ }).click();
-
-      // The new category should appear in the list
-      await expect(page.getByText(newCategoryName)).toBeVisible({ timeout: 8_000 });
-
-      // Capture id for cleanup
-      const response = await apiContext.get('/categories', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      if (response.ok()) {
-        const cats = await response.json() as Array<{ id: string; name: string }>;
-        const found = cats.find((c) => c.name === newCategoryName);
-        if (found) {
-          createdCategoryId = found.id;
-        }
-      }
-    } finally {
-      if (createdCategoryId) {
-        try {
-          await apiContext.delete(`/categories/${createdCategoryId}`, {
-            headers: { Authorization: `Bearer ${adminToken}` },
-          });
-        } catch { /* ignore */ }
-      }
-      await apiContext.dispose();
-    }
-  });
 
   // -------------------------------------------------------------------------
   // TC-E2E-ADMIN-08: Non-admin cannot access /admin/users → redirect to /expenses

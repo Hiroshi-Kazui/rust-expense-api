@@ -32,12 +32,12 @@ test.describe('TC-E2E-AUTH: Authentication flow', () => {
     await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
     await page.getByRole('button', { name: /ログイン/ }).click();
 
-    // Should redirect to /expenses
-    await page.waitForURL(/\/expenses/, { timeout: 10_000 });
-    expect(page.url()).toContain('/expenses');
+    // Admin should redirect to /admin/expenses
+    await page.waitForURL(/\/admin\/expenses/, { timeout: 10_000 });
+    expect(page.url()).toContain('/admin/expenses');
 
-    // The page heading should confirm we are on the expense list
-    await expect(page.getByText('経費申請一覧')).toBeVisible();
+    // The page heading should confirm we are on the admin expense list
+    await expect(page.getByRole('heading', { name: /全申請一覧/ })).toBeVisible();
   });
 
   // -------------------------------------------------------------------------
@@ -82,8 +82,8 @@ test.describe('TC-E2E-AUTH: Authentication flow', () => {
     // First log in so we have a valid session
     await loginAsAdmin(page);
 
-    // Confirm we are authenticated
-    await page.waitForURL(/\/expenses/, { timeout: 10_000 });
+    // Confirm we are authenticated (admin lands on /admin/expenses)
+    await page.waitForURL(/\/admin\/expenses/, { timeout: 10_000 });
 
     // Click the logout button/link in the sidebar
     await page.getByRole('button', { name: /ログアウト/ }).click();
