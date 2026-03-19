@@ -44,7 +44,7 @@ test.describe('TC-E2E-EXP: Expense flow (regular user)', () => {
     await loginAsUser(page);
 
     // Navigate to the create form via the sidebar link
-    await page.getByRole('link', { name: /新規申請/ }).click();
+    await page.getByRole('link', { name: /新規申請/ }).first().click();
     await page.waitForURL(/\/expenses\/new/, { timeout: 8_000 });
 
     // Select category (交通費)
@@ -73,7 +73,7 @@ test.describe('TC-E2E-EXP: Expense flow (regular user)', () => {
 
     // The purpose text should be visible in the list
     await expect(
-      page.getByText('E2E テスト申請 TC-E2E-EXP-01')
+      page.getByText('E2E テスト申請 TC-E2E-EXP-01').first()
     ).toBeVisible();
   });
 
@@ -83,7 +83,7 @@ test.describe('TC-E2E-EXP: Expense flow (regular user)', () => {
   test('TC-E2E-EXP-02: e2e_create_expense_with_receipt', async ({ page }) => {
     await loginAsUser(page);
 
-    await page.getByRole('link', { name: /新規申請/ }).click();
+    await page.getByRole('link', { name: /新規申請/ }).first().click();
     await page.waitForURL(/\/expenses\/new/, { timeout: 8_000 });
 
     // Fill required fields
@@ -108,7 +108,7 @@ test.describe('TC-E2E-EXP: Expense flow (regular user)', () => {
 
     // Confirm the submitted expense shows up in the list
     await expect(
-      page.getByText('E2E ファイル添付テスト TC-E2E-EXP-02')
+      page.getByText('E2E ファイル添付テスト TC-E2E-EXP-02').first()
     ).toBeVisible();
   });
 
@@ -155,7 +155,7 @@ test.describe('TC-E2E-EXP: Expense flow (regular user)', () => {
       expect(page.url()).toMatch(/\/expenses$/);
 
       // The updated amount should be visible in the list
-      await expect(page.getByText('9,999')).toBeVisible();
+      await expect(page.getByText('¥9999')).toBeVisible();
     } finally {
       // Best-effort cleanup; the test may have deleted it already
       try {

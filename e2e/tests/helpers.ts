@@ -107,15 +107,18 @@ export async function createExpenseViaApi(
     note?: string;
   }
 ): Promise<CreatedExpense> {
+  const formData: Record<string, string> = {
+    category_id: params.categoryId,
+    amount: params.amount.toString(),
+    purpose: params.purpose,
+    occurred_at: params.occurredAt,
+  };
+  if (params.note) {
+    formData.note = params.note;
+  }
   const response = await apiContext.post(`${BACKEND_URL}/expenses`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: {
-      category_id: params.categoryId,
-      amount: params.amount,
-      purpose: params.purpose,
-      occurred_at: params.occurredAt,
-      note: params.note ?? null,
-    },
+    multipart: formData,
   });
   if (!response.ok()) {
     throw new Error(

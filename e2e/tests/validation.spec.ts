@@ -53,7 +53,7 @@ test.describe('TC-E2E-VAL: Form validation', () => {
     await loginAsUser(page);
 
     // Navigate to the new expense form
-    await page.getByRole('link', { name: /新規申請/ }).click();
+    await page.getByRole('link', { name: /新規申請/ }).first().click();
     await page.waitForURL(/\/expenses\/new/, { timeout: 8_000 });
 
     // Leave all fields empty and click the submit button
@@ -76,7 +76,7 @@ test.describe('TC-E2E-VAL: Form validation', () => {
     await loginAsUser(page);
 
     // Navigate to the new expense form
-    await page.getByRole('link', { name: /新規申請/ }).click();
+    await page.getByRole('link', { name: /新規申請/ }).first().click();
     await page.waitForURL(/\/expenses\/new/, { timeout: 8_000 });
 
     // Select a category so the field is valid

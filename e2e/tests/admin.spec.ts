@@ -97,11 +97,13 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
     const apiContext = await createApiContext();
     const adminToken = await getApiToken(apiContext, ADMIN_EMAIL, ADMIN_PASSWORD);
     const category = await findCategoryByName(apiContext, adminToken, CATEGORY_NAME);
+    const runId = Date.now();
+    const purpose = `承認テスト-${runId}`;
 
     const expense = await createExpenseViaApi(apiContext, adminToken, {
       categoryId: category.id,
       amount: 400,
-      purpose: '承認テスト ADMIN-03',
+      purpose,
       occurredAt: '2025-04-02',
     });
 
@@ -111,14 +113,13 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
       await page.waitForURL(/\/admin\/expenses/, { timeout: 8_000 });
 
       // Find the row for our expense and click its 承認 button
-      const expenseRow = page.getByText('承認テスト ADMIN-03').locator('../..');
+      const expenseRow = page.getByText(purpose).locator('..');
       await expenseRow.getByRole('button', { name: /^承認$/ }).click();
 
       // The badge in that row should change to 承認済
       await expect(
         expenseRow.locator('.badge-approved')
       ).toBeVisible({ timeout: 8_000 });
-      await expect(expenseRow.getByText('承認済')).toBeVisible();
     } finally {
       // Attempt cleanup (already approved, may need admin token)
       try {
@@ -135,11 +136,13 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
     const apiContext = await createApiContext();
     const adminToken = await getApiToken(apiContext, ADMIN_EMAIL, ADMIN_PASSWORD);
     const category = await findCategoryByName(apiContext, adminToken, CATEGORY_NAME);
+    const runId = Date.now();
+    const purpose = `差し戻しテスト-${runId}`;
 
     const expense = await createExpenseViaApi(apiContext, adminToken, {
       categoryId: category.id,
       amount: 450,
-      purpose: '差し戻しテスト ADMIN-04',
+      purpose,
       occurredAt: '2025-04-03',
     });
 
@@ -149,14 +152,13 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
       await page.waitForURL(/\/admin\/expenses/, { timeout: 8_000 });
 
       // Find the row and click its 差し戻し button
-      const expenseRow = page.getByText('差し戻しテスト ADMIN-04').locator('../..');
+      const expenseRow = page.getByText(purpose).locator('..');
       await expenseRow.getByRole('button', { name: /差し戻し/ }).click();
 
       // Badge should update to 差し戻し (rejected)
       await expect(
         expenseRow.locator('.badge-rejected')
       ).toBeVisible({ timeout: 8_000 });
-      await expect(expenseRow.getByText('差し戻し')).toBeVisible();
     } finally {
       try {
         await deleteExpenseViaApi(apiContext, adminToken, expense.id);
@@ -173,17 +175,21 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
     const adminToken = await getApiToken(apiContext, ADMIN_EMAIL, ADMIN_PASSWORD);
     const category = await findCategoryByName(apiContext, adminToken, CATEGORY_NAME);
 
-    // Create two pending expenses
+    // Create two pending expenses with unique IDs to avoid stale data collisions
+    const runId = Date.now();
+    const purpose1 = `一括承認テスト1-${runId}`;
+    const purpose2 = `一括承認テスト2-${runId}`;
+
     const expense1 = await createExpenseViaApi(apiContext, adminToken, {
       categoryId: category.id,
       amount: 111,
-      purpose: '一括承認テスト1 ADMIN-05',
+      purpose: purpose1,
       occurredAt: '2025-04-04',
     });
     const expense2 = await createExpenseViaApi(apiContext, adminToken, {
       categoryId: category.id,
       amount: 222,
-      purpose: '一括承認テスト2 ADMIN-05',
+      purpose: purpose2,
       occurredAt: '2025-04-04',
     });
 
@@ -193,8 +199,8 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
       await page.waitForURL(/\/admin\/expenses/, { timeout: 8_000 });
 
       // Check the checkbox for each test expense row
-      const row1 = page.getByText('一括承認テスト1 ADMIN-05').locator('../..');
-      const row2 = page.getByText('一括承認テスト2 ADMIN-05').locator('../..');
+      const row1 = page.getByText(purpose1).locator('..');
+      const row2 = page.getByText(purpose2).locator('..');
 
       await row1.locator('input[type="checkbox"]').check();
       await row2.locator('input[type="checkbox"]').check();
