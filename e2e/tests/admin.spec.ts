@@ -4,7 +4,7 @@
  * TC-E2E-ADMIN-01  Admin sees admin menu in sidebar
  * TC-E2E-ADMIN-02  Admin sees all expenses
  * TC-E2E-ADMIN-03  Individual approve → badge changes to "承認済"
- * TC-E2E-ADMIN-04  Individual reject → badge changes to "差し戻し"
+ * TC-E2E-ADMIN-04  Individual reject → badge changes to "却下"
  * TC-E2E-ADMIN-05  Bulk approve multiple → all badges change to "承認済"
  * TC-E2E-ADMIN-06  Admin creates user
  * TC-E2E-ADMIN-07  (removed — category management screen removed from admin UI)
@@ -139,14 +139,14 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
   });
 
   // -------------------------------------------------------------------------
-  // TC-E2E-ADMIN-04: Individual reject → badge changes to "差し戻し"
+  // TC-E2E-ADMIN-04: Individual reject → badge changes to "却下"
   // -------------------------------------------------------------------------
   test('TC-E2E-ADMIN-04: e2e_admin_reject_single_expense', async ({ page }) => {
     const apiContext = await createApiContext();
     const adminToken = await getApiToken(apiContext, ADMIN_EMAIL, ADMIN_PASSWORD);
     const category = await findCategoryByName(apiContext, adminToken, CATEGORY_NAME);
     const runId = Date.now();
-    const purpose = `差し戻しテスト-${runId}`;
+    const purpose = `却下テスト-${runId}`;
 
     const expense = await createExpenseViaApi(apiContext, adminToken, {
       categoryId: category.id,
@@ -160,11 +160,11 @@ test.describe('TC-E2E-ADMIN: Admin flow', () => {
       await page.getByRole('link', { name: /全申請一覧/ }).click();
       await page.waitForURL(/\/admin\/expenses/, { timeout: 8_000 });
 
-      // Find the row and click its 差し戻し button
+      // Find the row and click its 却下 button
       const expenseRow = page.getByText(purpose).locator('..');
-      await expenseRow.getByRole('button', { name: /差し戻し/ }).click();
+      await expenseRow.getByRole('button', { name: /却下/ }).click();
 
-      // Badge should update to 差し戻し (rejected)
+      // Badge should update to 却下 (rejected)
       await expect(
         expenseRow.locator('.badge-rejected')
       ).toBeVisible({ timeout: 8_000 });

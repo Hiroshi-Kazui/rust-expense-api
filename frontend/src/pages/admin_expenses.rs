@@ -177,7 +177,7 @@ pub fn AdminExpensesPage() -> impl IntoView {
                                                             <span class="text-gray-300">"/"</span>
                                                             <button class="text-xs text-red-500 hover:text-red-700 font-medium"
                                                                 on:click=move |_| update_status(eid3c.clone(), "Rejected")>
-                                                                "差し戻し"
+                                                                "却下"
                                                             </button>
                                                         }.into_any()
                                                     } else {

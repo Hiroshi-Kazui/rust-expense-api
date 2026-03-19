@@ -44,7 +44,7 @@ impl std::fmt::Display for ExpenseStatus {
         match self {
             ExpenseStatus::Pending => write!(f, "申請中"),
             ExpenseStatus::Approved => write!(f, "承認済"),
-            ExpenseStatus::Rejected => write!(f, "差し戻し"),
+            ExpenseStatus::Rejected => write!(f, "却下"),
         }
     }
 }

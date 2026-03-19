@@ -28,8 +28,8 @@ fn test_expense_status_display() {
     );
     assert_eq!(
         format!("{}", ExpenseStatus::Rejected),
-        "差し戻し",
-        "Rejected should display as 差し戻し"
+        "却下",
+        "Rejected should display as 却下"
     );
 }
 
