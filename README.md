@@ -257,7 +257,7 @@ curl -s http://localhost:8080/expenses \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
-#### PATCH /expenses/{id}/status — 個別承認・差し戻し
+#### PATCH /expenses/{id}/status — 個別承認・却下
 
 ```bash
 # 承認
@@ -266,7 +266,7 @@ curl -s -X PATCH http://localhost:8080/expenses/<経費UUID>/status \
   -H 'Content-Type: application/json' \
   -d '{"status": "Approved"}' | jq .
 
-# 差し戻し
+# 却下
 curl -s -X PATCH http://localhost:8080/expenses/<経費UUID>/status \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
@@ -333,22 +333,22 @@ expenses
 | `/expenses/:id/edit` | 経費申請 編集 | 本人のみ（Pending のみ編集可） |
 | `/admin/expenses` | 全申請一覧（管理者） | Admin のみ |
 | `/admin/users` | ユーザー管理 | Admin のみ |
-| `/admin/categories` | 勘定項目管理 | Admin のみ |
 
 ### 各画面の機能
 
 #### ログイン（`/login`）
 
 - メールアドレス・パスワードによる認証
-- 認証成功後 `/expenses` へリダイレクト
+- 認証成功後、Admin は `/admin/expenses`、一般ユーザーは `/expenses` へリダイレクト
 - 未入力・認証失敗時のエラーメッセージ表示
 - JWT トークンを `localStorage` に保存
 
 #### 経費申請一覧（`/expenses`）
 
 - 自分が作成した申請をテーブル表示（目的・金額・発生日・ステータス）
-- ステータスバッジ表示（申請中 / 承認済 / 差し戻し）
+- ステータスバッジ表示（申請中 / 承認済 / 却下）
 - Pending 申請のみ「編集」リンクを表示
+- 添付ファイルがある場合は「DL」リンクを表示
 - 「新規申請」ボタンで作成画面へ遷移
 
 #### 経費申請 新規作成（`/expenses/new`）
@@ -362,15 +362,18 @@ expenses
 
 - 既存データをフォームに初期表示
 - 勘定項目・金額・目的・発生日・備考を変更して更新
+- 添付ファイルがある場合はダウンロードリンクを表示。Pending 申請のみ「添付削除」ボタンを表示
 - 削除ボタンは **2回クリック確認方式**（1回目で「本当に削除」に変わる）
 - Pending 以外の申請は編集・削除不可
 
 #### 全申請一覧 — 管理者（`/admin/expenses`）
 
-- 全ユーザーの申請を一覧表示
-- Pending 申請に「承認」「差し戻し」ボタンを表示
-- 承認済・差し戻し済の申請は「戻す」ボタンで Pending に戻す
+- 全ユーザーの申請を申請者名付きで一覧表示
+- すべて / 申請中 / 承認済 / 却下 のタブでクライアントサイドフィルタリング
+- Pending 申請に「承認」「却下」ボタンを表示
+- 承認済・却下済の申請は「戻す」ボタンで Pending に戻す
 - Pending 申請にチェックボックスを表示し、複数選択して**一括承認**が可能
+- 添付ファイルがある場合は「DL」リンクを表示
 - ステータス変更はページリロードなしに即時反映
 
 #### ユーザー管理（`/admin/users`）
@@ -378,15 +381,11 @@ expenses
 - 登録済みユーザー一覧をテーブル表示
 - 名前・メールアドレス・パスワード・ロール（User / Admin）を入力してユーザー登録
 
-#### 勘定項目管理（`/admin/categories`）
-
-- 勘定項目の一覧表示
-- 名前を入力して勘定項目を追加
-
 ### 共通レイアウト
 
 - 左サイドバーにナビゲーションリンクとログインユーザー名を表示
-- Admin ユーザーのみ管理メニュー（全申請一覧・ユーザー・勘定項目）を表示
+- Admin サイドバー：全申請一覧・ユーザー管理のみ表示（申請フォームは非表示）
+- 一般ユーザーサイドバー：経費申請一覧・新規申請を表示
 - 未認証状態で保護ページにアクセスすると `/login` へリダイレクト
 - Admin 以外が管理ページにアクセスすると `/expenses` へリダイレクト
 
